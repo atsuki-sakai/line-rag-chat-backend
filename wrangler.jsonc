@@ -1,0 +1,16 @@
+{
+  "compatibility_date": "2025-04-01",
+  "main": "src/index.ts",
+  "name": "line-rag-chat-backend",
+  "upload_source_maps": true,
+  "observability": {
+    "enabled": true
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "line-rag-chat-db",
+      "database_id": "6bb69708-5035-4a0e-8632-0d5e159299a6"
+    }
+  ]
+}
