@@ -1,11 +1,25 @@
 import { ApiException, fromHono } from "chanfana";
 import { Hono } from "hono";
 import { tasksRouter } from "./endpoints/tasks/router";
+import { lineRouter } from "./endpoints/line/router";
 import { ContentfulStatusCode } from "hono/utils/http-status";
 import { DummyEndpoint } from "./endpoints/dummyEndpoint";
+import { createDb } from "./db";
 
 // Start a Hono app
-const app = new Hono<{ Bindings: Env }>();
+const app = new Hono<{ 
+  Bindings: Env;
+  Variables: {
+    db: ReturnType<typeof createDb>;
+  };
+}>();
+
+// Add Drizzle database middleware
+app.use("*", async (c, next) => {
+  const db = createDb(c.env.DB);
+  c.set("db", db);
+  await next();
+});
 
 app.onError((err, c) => {
   if (err instanceof ApiException) {
@@ -42,6 +56,9 @@ const openapi = fromHono(app, {
 
 // Register Tasks Sub router
 openapi.route("/tasks", tasksRouter);
+
+// Register LINE Sub router
+openapi.route("/line", lineRouter);
 
 // Register other endpoints
 openapi.post("/dummy/:slug", DummyEndpoint);
