@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { tasks, type Task, type InsertTask } from "../../db/schema";
 
 export const task = z.object({
   id: z.number().int(),
@@ -21,3 +22,5 @@ export const TaskModel = {
   },
   serializerObject: task,
 };
+
+export { tasks, type Task, type InsertTask };
