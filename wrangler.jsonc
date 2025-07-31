@@ -6,11 +6,17 @@
   "observability": {
     "enabled": true
   },
+  "compatibility_flags": ["nodejs_compat"],
+  "vars": {
+    "DIFY_API_ENDPOINT": "https://api.dify.ai/v1",
+    "ENVIRONMENT": "production"
+  },
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "line-rag-chat-db",
-      "database_id": "6bb69708-5035-4a0e-8632-0d5e159299a6"
+      "database_id": "6bb69708-5035-4a0e-8632-0d5e159299a6",
+      "migrations_dir": "migrations"
     }
   ]
 }
