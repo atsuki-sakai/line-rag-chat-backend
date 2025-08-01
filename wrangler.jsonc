@@ -9,7 +9,19 @@
   "compatibility_flags": ["nodejs_compat"],
   "vars": {
     "DIFY_API_ENDPOINT": "https://api.dify.ai/v1",
-    "ENVIRONMENT": "production"
+    "ENVIRONMENT": "development",
+    "LINE_CHANNEL_SECRET": "eae95cac0d3d5102b462f6d65ceefe71",
+    "LINE_CHANNEL_ACCESS_TOKEN": "Hx+e9Y53NW/YiPa6I/RMpMS9faaMJhPdDvCxeufMXJB380qJmV2hSKQpWrWC6A4G49LVVr25IGyDuw3DniwRiviE+2thDspoAY50qCXd9g/MFJMIY8lxXqSm3XnVf6Gju6TL6ExrtwC48/YWsht7kgdB04t89/1O/w1cDnyilFU=",
+    "DIFY_API_KEY": "app-LHvH5DUMxQPKbETIHlTyCXnM",
+    "INNGEST_EVENT_KEY": "Qf7KaH21Sx-8huC3n0qh9IW-DWvPTKaS17Ug-TI4MhsJ73_K5VvBRA5jCXF5lwAaRgE5m4Y4FGGFBNeSKE-5FQ",
+    "INNGEST_SIGNING_KEY": "signkey-prod-df921882057678904483f0d7b2873acccc322af1da40604807c3c96f6e865307"
+  },
+  "env": {
+    "production": {
+      "vars": {
+        "ENVIRONMENT": "production"
+      }
+    }
   },
   "d1_databases": [
     {

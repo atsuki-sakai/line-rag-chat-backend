@@ -46,11 +46,11 @@ export const difyRequest = z.object({
 });
 
 export const difyResponse = z.object({
-  answer: z.string(),
-  conversation_id: z.string(),
-  created_at: z.number(),
-  id: z.string(),
-  metadata: z.record(z.any()),
+  answer: z.string().optional(),
+  conversation_id: z.string().optional(),
+  created_at: z.number().optional(),
+  id: z.string().optional(),
+  metadata: z.record(z.any()).optional(),
 });
 
 export const lineMessageRequest = z.object({

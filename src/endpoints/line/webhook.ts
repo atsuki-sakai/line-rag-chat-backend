@@ -129,10 +129,15 @@ export class LineWebhook extends OpenAPIRoute {
           difyResponse = result.answer;
           if (result.conversation_id) {
             actualConversationId = result.conversation_id;
+            // Update database with new conversation_id if it changed
+            if (result.conversation_id !== conversationId) {
+              console.log(`Conversation ID updated: ${conversationId} -> ${result.conversation_id}`);
+            }
           }
           console.log(`Received object response:`, {
             answer: result.answer?.substring(0, 50) || "No answer",
-            conversation_id: result.conversation_id
+            conversation_id: result.conversation_id,
+            conversationIdChanged: result.conversation_id !== conversationId
           });
         }
       } catch (error) {
@@ -257,16 +262,45 @@ export class LineWebhook extends OpenAPIRoute {
 
       if (!response.ok) {
         const errorText = await response.text();
-        // Optimized error logging for production
+        // Detailed error logging for debugging
         console.error("Dify API error:", {
           status: response.status,
-          error: errorText.substring(0, 200), // Limit error text length
-          hasApiKey: !!c.env.DIFY_API_KEY
+          statusText: response.statusText,
+          url: `${c.env.DIFY_API_ENDPOINT}/chat-messages`,
+          error: errorText.substring(0, 500),
+          hasApiKey: !!c.env.DIFY_API_KEY,
+          apiKeyLength: c.env.DIFY_API_KEY?.length || 0,
+          requestBody: JSON.stringify(requestBody).substring(0, 300)
         });
+        
+        // Handle specific error cases
+        if (response.status === 404 && errorText.includes("Conversation Not Exists")) {
+          console.log("Conversation not found, retrying with new conversation");
+          // Retry with empty conversation_id for new conversation
+          return this.sendToDify(c, message, "", userId, imageUrl);
+        } else if (response.status === 401) {
+          return "申し訳ございません。認証エラーが発生しました。";
+        } else if (response.status === 403) {
+          return "申し訳ございません。アクセス権限がありません。";
+        } else if (response.status === 429) {
+          return "申し訳ございません。リクエスト制限に達しました。しばらく時間をおいて再度お試しください。";
+        } else if (response.status >= 500) {
+          return "申し訳ございません。サーバーエラーが発生しました。";
+        }
         return "申し訳ございません。一時的にサービスが利用できません。";
       }
 
-      const difyResult = await response.json() as DifyResponse;
+      let difyResult: DifyResponse;
+      try {
+        difyResult = await response.json() as DifyResponse;
+      } catch (parseError) {
+        console.error("Failed to parse Dify API response as JSON:", {
+          parseError: parseError instanceof Error ? parseError.message : String(parseError),
+          responseStatus: response.status,
+          responseHeaders: Object.fromEntries(response.headers.entries())
+        });
+        return "申し訳ございません。応答の解析に失敗しました。";
+      }
       
       // Performance monitoring
       const duration = Date.now() - startTime;
@@ -276,13 +310,24 @@ export class LineWebhook extends OpenAPIRoute {
       
       console.log(`Dify API response:`, {
         answer: difyResult.answer?.substring(0, 100) || "No answer",
-        conversation_id: difyResult.conversation_id,
-        duration: `${duration}ms`
+        conversation_id: difyResult.conversation_id || "No conversation_id",
+        duration: `${duration}ms`,
+        hasAnswer: !!difyResult.answer,
+        answerLength: difyResult.answer?.length || 0
       });
+      
+      // Validate that we have a meaningful answer
+      if (!difyResult.answer || difyResult.answer.trim() === "") {
+        console.warn("Dify API returned empty or undefined answer:", {
+          answer: difyResult.answer,
+          fullResponse: difyResult
+        });
+        return "申し訳ございません。回答を生成できませんでした。";
+      }
       
       // Return both the answer and conversation_id for saving to database
       return {
-        answer: difyResult.answer || "回答を生成できませんでした。",
+        answer: difyResult.answer,
         conversation_id: difyResult.conversation_id
       };
     } catch (error) {
