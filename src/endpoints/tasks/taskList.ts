@@ -53,23 +53,48 @@ export class TaskList extends OpenAPIRoute<HandleArgs> {
     }
 
     const offset = (page - 1) * limit;
-    const results = await query
+    
+    // ウィンドウ関数を使用してカウントとデータを1回のクエリで取得
+    const baseQuery = db
+      .select({
+        id: tasks.id,
+        name: tasks.name,
+        slug: tasks.slug,
+        description: tasks.description,
+        completed: tasks.completed,
+        due_date: tasks.due_date,
+        total_count: sql<number>`count(*) over()`.as('total_count')
+      })
+      .from(tasks);
+    
+    // 検索条件があれば適用
+    const finalQuery = search ? 
+      baseQuery.where(
+        or(
+          like(tasks.name, `%${search}%`),
+          like(tasks.slug, `%${search}%`),
+          like(tasks.description, `%${search}%`)
+        )
+      ) : baseQuery;
+
+    const results = await finalQuery
       .orderBy(desc(tasks.id))
       .limit(limit)
       .offset(offset);
 
-    const totalCount = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(tasks)
-      .then(result => result[0].count);
+    // 最初の行からtotal_countを取得（全行で同じ値）
+    const totalCount = results.length > 0 ? results[0].total_count : 0;
+
+    // total_countを除いたクリーンなデータを返す
+    const cleanResults = results.map(({ total_count, ...task }) => task);
 
     return c.json({
       success: true,
-      result: results,
+      result: cleanResults,
       result_info: {
         page,
         per_page: limit,
-        count: results.length,
+        count: cleanResults.length,
         total_count: totalCount,
       },
     });

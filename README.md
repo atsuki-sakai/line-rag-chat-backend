@@ -60,9 +60,67 @@ npm run test
 
 Test files are located in the `tests/` directory, with examples demonstrating how to test your endpoints and database interactions.
 
-## Project structure
+## Cloudflare Workflows Implementation Notes
+
+This project includes Cloudflare Workflows integration with LINE webhook processing. Key implementation considerations:
+
+### ⚠️ Critical Issues Resolved
+
+#### 1. Workflow Parameter Passing
+**Issue**: Workflow instances received empty payload (`Event payload: {}`)
+**Root Cause**: Incorrect API usage - used `payload` instead of `params`
+**Solution**: 
+```typescript
+// ❌ Incorrect
+await workflowBinding.create({ payload: workflowParams })
+
+// ✅ Correct  
+await workflowBinding.create({ params: workflowParams })
+```
+
+#### 2. D1 Database undefined Values
+**Issue**: `D1_TYPE_ERROR: Type 'undefined' not supported for value 'undefined'`
+**Root Cause**: D1 doesn't accept `undefined` values in bind parameters
+**Solution**: Always provide fallback values:
+```typescript
+// ❌ Incorrect - can pass undefined
+message_content: messageContent,
+image_url: imageUrl,
+dify_response: difyResult.answer,
+
+// ✅ Correct - fallback to null/empty string
+message_content: messageContent || null,
+image_url: imageUrl || null, 
+dify_response: difyResult.answer || "",
+```
+
+#### 3. WorkflowEntrypoint Type Safety
+**Issue**: `this.env.DB` was type `unknown`, causing TypeScript errors
+**Solution**: Define proper environment interface:
+```typescript
+interface WorkflowEnv {
+  DB: D1Database;
+  DIFY_API_ENDPOINT: string;
+  // ... other bindings
+}
+
+export class LineMessageWorkflow extends WorkflowEntrypoint<WorkflowEnv, LineMessageWorkflowParams> {
+  // Now this.env.DB is properly typed as D1Database
+}
+```
+
+### 🔧 Best Practices for Workflows
+
+1. **Always validate input parameters early** in workflow execution
+2. **Use proper null/undefined handling** for D1 database operations  
+3. **Define environment interfaces** for type safety
+4. **Use `params` not `payload`** when creating workflow instances
+5. **Access parameters via `event.payload`** within workflow methods
+
+### 📁 Project Structure
 
 1. Your main router is defined in `src/index.ts`.
 2. Each endpoint has its own file in `src/endpoints/`.
-3. Integration tests are located in the `tests/` directory.
-4. For more information read the [chanfana documentation](https://chanfana.com/), [Hono documentation](https://hono.dev/docs), and [Vitest documentation](https://vitest.dev/guide/).
+3. Workflows are in `src/workflows/` directory.
+4. Integration tests are located in the `tests/` directory.
+5. For more information read the [chanfana documentation](https://chanfana.com/), [Hono documentation](https://hono.dev/docs), [Cloudflare Workflows documentation](https://developers.cloudflare.com/workflows/), and [Vitest documentation](https://vitest.dev/guide/).

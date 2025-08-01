@@ -12,16 +12,9 @@
     "ENVIRONMENT": "development",
     "LINE_CHANNEL_SECRET": "eae95cac0d3d5102b462f6d65ceefe71",
     "LINE_CHANNEL_ACCESS_TOKEN": "Hx+e9Y53NW/YiPa6I/RMpMS9faaMJhPdDvCxeufMXJB380qJmV2hSKQpWrWC6A4G49LVVr25IGyDuw3DniwRiviE+2thDspoAY50qCXd9g/MFJMIY8lxXqSm3XnVf6Gju6TL6ExrtwC48/YWsht7kgdB04t89/1O/w1cDnyilFU=",
-    "DIFY_API_KEY": "app-LHvH5DUMxQPKbETIHlTyCXnM",
+    "DIFY_API_KEY": "app-dA47NKRCgJqhTrEWItGepmOI",
     "INNGEST_EVENT_KEY": "Qf7KaH21Sx-8huC3n0qh9IW-DWvPTKaS17Ug-TI4MhsJ73_K5VvBRA5jCXF5lwAaRgE5m4Y4FGGFBNeSKE-5FQ",
     "INNGEST_SIGNING_KEY": "signkey-prod-df921882057678904483f0d7b2873acccc322af1da40604807c3c96f6e865307"
-  },
-  "env": {
-    "production": {
-      "vars": {
-        "ENVIRONMENT": "production"
-      }
-    }
   },
   "d1_databases": [
     {
@@ -29,6 +22,13 @@
       "database_name": "line-rag-chat-db",
       "database_id": "6bb69708-5035-4a0e-8632-0d5e159299a6",
       "migrations_dir": "migrations"
+    }
+  ],
+  "workflows": [
+    {
+      "binding": "LINE_MESSAGE_WORKFLOW",
+      "name": "line-message-workflow",
+      "class_name": "LineMessageWorkflow"
     }
   ]
 }

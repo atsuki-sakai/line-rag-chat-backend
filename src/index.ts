@@ -5,10 +5,13 @@ import { lineRouter } from "./endpoints/line/router";
 import { ContentfulStatusCode } from "hono/utils/http-status";
 import { DummyEndpoint } from "./endpoints/dummyEndpoint";
 import { createDb } from "./db";
+import { LineMessageWorkflow } from "./workflows/lineMessageWorkflow";
 
 // Start a Hono app
 const app = new Hono<{ 
-  Bindings: Env;
+  Bindings: Env & {
+    LINE_MESSAGE_WORKFLOW: Workflow;
+  };
   Variables: {
     db: ReturnType<typeof createDb>;
   };
@@ -65,3 +68,6 @@ openapi.post("/dummy/:slug", DummyEndpoint);
 
 // Export the Hono app
 export default app;
+
+// Export the Workflow class
+export { LineMessageWorkflow };
