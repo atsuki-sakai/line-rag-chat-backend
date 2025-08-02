@@ -57,6 +57,12 @@ export class LineWebhook extends OpenAPIRoute {
       return c.json({}, 400);
     }
     
+    console.log("Environment variable check:", {
+      hasLineChannelSecret: !!c.env.LINE_CHANNEL_SECRET,
+      lineChannelSecretLength: c.env.LINE_CHANNEL_SECRET?.length || 0,
+      envKeys: Object.keys(c.env)
+    });
+
     if (!this.verifySignature(rawBody, signature, c.env.LINE_CHANNEL_SECRET)) {
       console.error("Signature verification failed");
       return c.json({}, 403);
@@ -95,13 +101,22 @@ export class LineWebhook extends OpenAPIRoute {
 
   private verifySignature(body: string, signature: string, secret: string): boolean {
     const hash = crypto
-      .createHmac("SHA256", secret)
+      .createHmac("sha256", secret)
       .update(body, "utf8")
       .digest("base64");
     
-    // Only log signature failures in production
+    console.log("Signature verification details:", {
+      receivedSignature: signature,
+      calculatedHash: hash,
+      secretLength: secret?.length || 0,
+      bodyLength: body.length,
+      matches: signature === hash
+    });
+    
     if (signature !== hash) {
-      console.error("Signature verification failed");
+      console.error("Signature verification failed - mismatch detected");
+    } else {
+      console.log("Signature verification successful");
     }
     
     return signature === hash;
@@ -119,15 +134,13 @@ export class LineWebhook extends OpenAPIRoute {
       imageUrl = event.message.contentProvider.originalContentUrl;
     }
 
+    console.log("Environment variables:", JSON.stringify(c.env, null, 2));
     const workflowParams: LineMessageWorkflowParams = {
       userId,
       messageType,
       messageContent,
       imageUrl,
-      replyToken: event.replyToken,
-      DIFY_API_ENDPOINT: c.env.DIFY_API_ENDPOINT,
-      DIFY_API_KEY: c.env.DIFY_API_KEY,
-      LINE_CHANNEL_ACCESS_TOKEN: c.env.LINE_CHANNEL_ACCESS_TOKEN,
+      env: c.env
     };
 
     console.log(`Creating Workflow instance for user: ${userId}, message: ${messageContent?.substring(0, 50)}`);

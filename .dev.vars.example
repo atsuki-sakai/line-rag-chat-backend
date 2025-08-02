@@ -9,10 +9,3 @@ LINE_CHANNEL_ACCESS_TOKEN=your_line_channel_access_token_here
 # Dify AI
 DIFY_API_KEY=your_dify_api_key_here
 DIFY_API_ENDPOINT=https://api.dify.ai/v1
-
-# Inngest (使用する場合)
-INNGEST_EVENT_KEY=your_inngest_event_key_here
-INNGEST_SIGNING_KEY=your_inngest_signing_key_here
-
-# 環境設定
-ENVIRONMENT=development

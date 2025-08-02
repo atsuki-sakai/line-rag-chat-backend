@@ -1,126 +1,234 @@
-# OpenAPI Template
+# LINE RAG Chat Backend
 
-[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/cloudflare/templates/tree/main/chanfana-openapi-template)
+LINE Messaging API、Dify AI、Cloudflare Workersを統合したリアルタイムチャットバックエンドシステム
 
-![OpenAPI Template Preview](https://imagedelivery.net/wSMYJvS3Xw-n339CbDyDIA/91076b39-1f5b-46f6-7f14-536a6f183000/public)
+## 🚀 概要
 
-<!-- dash-content-start -->
+このプロジェクトは、LINE Bot、Dify AI、Cloudflare Workersを組み合わせて、高性能でスケーラブルなRAG（Retrieval-Augmented Generation）チャットバックエンドを提供します。
 
-This is a Cloudflare Worker with OpenAPI 3.1 Auto Generation and Validation using [chanfana](https://github.com/cloudflare/chanfana) and [Hono](https://github.com/honojs/hono).
+### 主要機能
 
-This is an example project made to be used as a quick start into building OpenAPI compliant Workers that generates the
-`openapi.json` schema automatically from code and validates the incoming request to the defined parameters or request body.
+- **LINE Messaging API統合**: LINEユーザーとのリアルタイム対話
+- **Dify AI RAG処理**: 知識ベースに基づく高精度AI応答
+- **Cloudflare Workflows**: 非同期メッセージ処理とワークフロー管理
+- **D1データベース**: 会話履歴と状態管理
+- **OpenAPI 3.1対応**: 自動API仕様生成とバリデーション
 
-This template includes various endpoints, a D1 database, and integration tests using [Vitest](https://vitest.dev/) as examples. In endpoints, you will find [chanfana D1 AutoEndpoints](https://chanfana.com/endpoints/auto/d1) and a [normal endpoint](https://chanfana.com/endpoints/defining-endpoints) to serve as examples for your projects.
+## 📋 技術スタック
 
-Besides being able to see the OpenAPI schema (openapi.json) in the browser, you can also extract the schema locally no hassle by running this command `npm run schema`.
+- **Cloudflare Workers**: エッジコンピューティングプラットフォーム
+- **Hono**: 高速WebフレームワークとAPI構築
+- **Chanfana**: OpenAPI自動生成・リクエスト検証
+- **Drizzle ORM**: 型安全なD1データベースクエリ
+- **Cloudflare Workflows**: 耐久性実行エンジン
+- **Vitest**: Workers環境でのテスト実行
 
-<!-- dash-content-end -->
+## 🔧 プロジェクト構成
 
-> [!IMPORTANT]
-> When using C3 to create this project, select "no" when it asks if you want to deploy. You need to follow this project's [setup steps](https://github.com/cloudflare/templates/tree/main/openapi-template#setup-steps) before deploying.
-
-## Getting Started
-
-Outside of this repo, you can start a new project with this template using [C3](https://developers.cloudflare.com/pages/get-started/c3/) (the `create-cloudflare` CLI):
-
-```bash
-npm create cloudflare@latest -- --template=cloudflare/templates/openapi-template
+```
+line-rag-chat-backend/
+├── src/
+│   ├── endpoints/              # APIエンドポイント
+│   │   └── line/              # LINE Webhook・メッセージング
+│   ├── workflows/             # Cloudflare Workflows
+│   │   └── lineMessageWorkflow.ts
+│   ├── db/                    # データベース設定
+│   │   ├── index.ts          # Drizzle設定
+│   │   └── schema.ts         # テーブル定義
+│   ├── types.ts              # 共通型定義
+│   └── index.ts              # メインルーター
+├── migrations/               # D1データベースマイグレーション
+├── tests/                   # 統合テスト
+├── wrangler.jsonc          # Cloudflare設定
+└── CLAUDE.md              # AI開発者向け指示
 ```
 
-A live public deployment of this template is available at [https://openapi-template.templates.workers.dev](https://openapi-template.templates.workers.dev)
+## ⚡ クイックスタート
 
-## Setup Steps
+### 1. 前提条件
 
-1. Install the project dependencies with a package manager of your choice:
-   ```bash
-   npm install
-   ```
-2. Create a [D1 database](https://developers.cloudflare.com/d1/get-started/) with the name "openapi-template-db":
-   ```bash
-   npx wrangler d1 create openapi-template-db
-   ```
-   ...and update the `database_id` field in `wrangler.json` with the new database ID.
-3. Run the following db migration to initialize the database (notice the `migrations` directory in this project):
-   ```bash
-   npx wrangler d1 migrations apply DB --remote
-   ```
-4. Deploy the project!
-   ```bash
-   npx wrangler deploy
-   ```
+- Node.js 18+
+- npm または pnpm
+- Cloudflareアカウント
+- LINE Developersアカウント
+- Dify AIアカウント
 
-## Testing
-
-This template includes integration tests using [Vitest](https://vitest.dev/). To run the tests locally:
+### 2. インストール
 
 ```bash
-npm run test
+git clone https://github.com/atsuki-sakai/line-rag-chat-backend.git
+cd line-rag-chat-backend
+npm install
 ```
 
-Test files are located in the `tests/` directory, with examples demonstrating how to test your endpoints and database interactions.
+### 3. 環境設定
 
-## Cloudflare Workflows Implementation Notes
+#### D1データベース作成
+```bash
+npx wrangler d1 create line-rag-chat-db
+```
 
-This project includes Cloudflare Workflows integration with LINE webhook processing. Key implementation considerations:
+出力された`database_id`を`wrangler.jsonc`に設定
 
-### ⚠️ Critical Issues Resolved
+#### 環境変数設定
+`.dev.vars`ファイルを作成：
+```bash
+LINE_CHANNEL_SECRET="your_line_channel_secret"
+LINE_CHANNEL_ACCESS_TOKEN="your_line_channel_access_token"
+DIFY_API_KEY="your_dify_api_key"
+DIFY_API_ENDPOINT="https://api.dify.ai/v1"
+```
 
-#### 1. Workflow Parameter Passing
-**Issue**: Workflow instances received empty payload (`Event payload: {}`)
-**Root Cause**: Incorrect API usage - used `payload` instead of `params`
-**Solution**: 
+#### データベースマイグレーション
+```bash
+# ローカル環境
+npm run seedLocalDb
+
+# 本番環境（デプロイ時自動実行）
+npm run predeploy
+```
+
+### 4. 開発開始
+
+```bash
+# 開発サーバー起動
+npm run dev
+
+# テスト実行
+npm test
+
+# OpenAPIスキーマ生成
+npm run schema
+```
+
+### 5. デプロイ
+
+```bash
+npm run deploy
+```
+
+## 🔗 外部サービス設定
+
+### LINE Developers
+
+1. [LINE Developers Console](https://developers.line.biz/console/)でMessaging API Channel作成
+2. Webhook URL設定: `https://your-worker.workers.dev/line/webhook`
+3. Channel SecretとAccess Tokenを取得
+
+### Dify AI
+
+1. [Dify](https://dify.ai)でアプリケーション作成
+2. API Keyを取得
+3. エンドポイントURL確認
+
+## 🏗️ アーキテクチャ
+
+### データフロー
+
+1. **LINE Webhook** → メッセージ受信 (`src/endpoints/line/webhook.ts`)
+2. **LineMessageWorkflow** → Dify AI処理・DB保存の非同期実行
+3. **Dify API** → RAG処理によるAI応答生成
+4. **D1 Database** → 会話履歴とメタデータ保存
+5. **LINE Reply** → ユーザーへの応答送信
+
+### データベーススキーマ
+
+#### line_messages テーブル
+```sql
+CREATE TABLE line_messages (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  conversation_id TEXT NOT NULL,
+  user_id TEXT NOT NULL,
+  message_type TEXT NOT NULL,
+  message_content TEXT,
+  image_url TEXT,
+  dify_response TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+```
+
+## 🧪 テスト
+
+```bash
+# 全テスト実行（デプロイ検証含む）
+npm test
+
+# Vitestのみ実行
+npx vitest run --config tests/vitest.config.mts
+```
+
+テストは`@cloudflare/vitest-pool-workers`を使用してWorkers環境で実行されます。
+
+## 📊 パフォーマンス最適化
+
+- **並列処理**: データベース保存とLINE送信の同時実行
+- **クエリ最適化**: ウィンドウ関数による効率的なページネーション  
+- **タイムアウト制御**: API呼び出しの信頼性向上
+- **エラーハンドリング**: Promise.allSettledによる堅牢性
+
+## 🔒 セキュリティ
+
+- **Webhook署名検証**: HMAC-SHA256による改ざん防止
+- **環境変数管理**: 機密情報の安全な管理
+- **リクエスト制限**: 8MBサイズ制限
+- **メッセージ長制限**: Dify 10,000文字・LINE 5,000文字
+
+## 🔧 重要な実装ポイント
+
+### Cloudflare Workflows
+
 ```typescript
-// ❌ Incorrect
-await workflowBinding.create({ payload: workflowParams })
-
-// ✅ Correct  
+// ✅ 正しい - paramsを使用
 await workflowBinding.create({ params: workflowParams })
+
+// ❌ 間違い - payloadは使用しない
+await workflowBinding.create({ payload: workflowParams })
 ```
 
-#### 2. D1 Database undefined Values
-**Issue**: `D1_TYPE_ERROR: Type 'undefined' not supported for value 'undefined'`
-**Root Cause**: D1 doesn't accept `undefined` values in bind parameters
-**Solution**: Always provide fallback values:
-```typescript
-// ❌ Incorrect - can pass undefined
-message_content: messageContent,
-image_url: imageUrl,
-dify_response: difyResult.answer,
+### D1データベース
 
-// ✅ Correct - fallback to null/empty string
+```typescript
+// ✅ 正しい - undefinedを回避
 message_content: messageContent || null,
-image_url: imageUrl || null, 
 dify_response: difyResult.answer || "",
+
+// ❌ 間違い - undefinedでエラー発生
+message_content: messageContent,
+dify_response: difyResult.answer,
 ```
 
-#### 3. WorkflowEntrypoint Type Safety
-**Issue**: `this.env.DB` was type `unknown`, causing TypeScript errors
-**Solution**: Define proper environment interface:
-```typescript
-interface WorkflowEnv {
-  DB: D1Database;
-  DIFY_API_ENDPOINT: string;
-  // ... other bindings
-}
+## 📚 参考資料
 
-export class LineMessageWorkflow extends WorkflowEntrypoint<WorkflowEnv, LineMessageWorkflowParams> {
-  // Now this.env.DB is properly typed as D1Database
-}
+- [Cloudflare Workers](https://developers.cloudflare.com/workers/)
+- [Cloudflare Workflows](https://developers.cloudflare.com/workflows/)
+- [LINE Messaging API](https://developers.line.biz/ja/docs/messaging-api/)
+- [Dify API](https://docs.dify.ai/)
+- [Hono Framework](https://hono.dev/)
+- [Chanfana OpenAPI](https://chanfana.com/)
+
+## 🆘 トラブルシューティング
+
+### よくある問題
+
+1. **D1_TYPE_ERROR**: undefinedをバインドパラメータに渡している
+2. **Workflow Parameter Passing**: `payload`ではなく`params`を使用
+3. **LINE署名検証エラー**: Channel Secretの設定確認
+
+### ログ確認
+
+```bash
+# ローカル
+npm run dev
+
+# 本番
+npx wrangler tail
 ```
 
-### 🔧 Best Practices for Workflows
+## 🤝 コントリビューション
 
-1. **Always validate input parameters early** in workflow execution
-2. **Use proper null/undefined handling** for D1 database operations  
-3. **Define environment interfaces** for type safety
-4. **Use `params` not `payload`** when creating workflow instances
-5. **Access parameters via `event.payload`** within workflow methods
+Issues・Pull Requestsをお待ちしています！
 
-### 📁 Project Structure
+## 📄 ライセンス
 
-1. Your main router is defined in `src/index.ts`.
-2. Each endpoint has its own file in `src/endpoints/`.
-3. Workflows are in `src/workflows/` directory.
-4. Integration tests are located in the `tests/` directory.
-5. For more information read the [chanfana documentation](https://chanfana.com/), [Hono documentation](https://hono.dev/docs), [Cloudflare Workflows documentation](https://developers.cloudflare.com/workflows/), and [Vitest documentation](https://vitest.dev/guide/).
+MIT License

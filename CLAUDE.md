@@ -21,7 +21,7 @@ This is a Cloudflare Worker API built with:
 
 ```bash
 # Development
-npm run dev                    # Start local dev server with DB seeding
+npm run dev                    # Start local dev server with DB seeding (uses pnpm internally)
 npm run seedLocalDb           # Apply migrations to local D1 database
 
 # Database
@@ -67,9 +67,11 @@ npm run cf-typegen          # Generate Cloudflare Worker types
 
 ### Environment Configuration
 - Environment variables in `wrangler.jsonc` → `vars` section
-- D1 database binding named `"DB"`
-- Workflow binding named `"LINE_MESSAGE_WORKFLOW"`
+- D1 database binding named `"DB"` (database_name: "line-rag-chat-db")
+- Workflow binding named `"LINE_MESSAGE_WORKFLOW"` (class_name: "LineMessageWorkflow")
 - Development uses single environment (no production env)
+- Observability enabled in wrangler config
+- Node.js compatibility flag enabled
 
 ### LINE Integration Specifics
 - Webhook validation uses HMAC-SHA256 signature verification
@@ -82,3 +84,21 @@ Tests use `@cloudflare/vitest-pool-workers` with:
 - Database migrations applied in setup (`tests/apply-migrations.ts`)
 - Isolated test environment with real Worker runtime
 - Integration tests validate full request/response cycles
+- Single worker configuration for test stability
+- Experimental compatibility flags enabled for testing
+
+## Workflow Implementation Details
+
+### LineMessageWorkflow Architecture
+- **Step 1**: Get or create conversation ID with database validation
+- **Step 2**: Process message through Dify AI API with 10-minute timeout
+- **Step 3**: Parallel execution of database save and LINE push using `Promise.allSettled`
+- **Error Handling**: Graceful degradation - continues if one operation fails
+- **Message Limits**: 10,000 chars for Dify, 5,000 chars for LINE (auto-truncation)
+- **Conversation Management**: UUID validation for existing conversations, empty string for new ones
+
+### Performance Optimizations
+- Parallel database save and LINE push operations
+- Timeout controls for external API calls (Dify: 10min, LINE: 20sec)
+- Message content caching and preview logging
+- Proper abort signal handling for fetch operations

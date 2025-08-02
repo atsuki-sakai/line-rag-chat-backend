@@ -1,16 +1,21 @@
 import { ApiException, fromHono } from "chanfana";
 import { Hono } from "hono";
-import { tasksRouter } from "./endpoints/tasks/router";
+import { HTTPException } from "hono/http-exception";
 import { lineRouter } from "./endpoints/line/router";
+import { adminRouter } from "./endpoints/admin/router";
 import { ContentfulStatusCode } from "hono/utils/http-status";
-import { DummyEndpoint } from "./endpoints/dummyEndpoint";
 import { createDb } from "./db";
 import { LineMessageWorkflow } from "./workflows/lineMessageWorkflow";
+import { basicAuth } from "hono/basic-auth";
+
+
 
 // Start a Hono app
 const app = new Hono<{ 
   Bindings: Env & {
     LINE_MESSAGE_WORKFLOW: Workflow;
+    ADMIN_USER: string;
+    ADMIN_PASSWORD: string;
   };
   Variables: {
     db: ReturnType<typeof createDb>;
@@ -26,16 +31,25 @@ app.use("*", async (c, next) => {
 
 app.onError((err, c) => {
   if (err instanceof ApiException) {
-    // If it's a Chanfana ApiException, let Chanfana handle the response
     return c.json(
       { success: false, errors: err.buildResponse() },
       err.status as ContentfulStatusCode,
     );
   }
 
-  console.error("Global error handler caught:", err); // Log the error if it's not known
+  // --- HTTPException の処理を追加 ---
+  // このようにしないとBasicAuthの認証がうまく動かない.
+  if (err instanceof HTTPException) {
+    return err.getResponse(); // 正しいレスポンスを返す
+  }
+  // ------------------------------------
 
-  // For other errors, return a generic 500 response
+  console.error("Global error handler caught:", err);
+  // スタックトレースも出力 (任意)
+  if (err.stack) {
+    console.error("Error stack:", err.stack);
+  }
+
   return c.json(
     {
       success: false,
@@ -50,21 +64,37 @@ const openapi = fromHono(app, {
   docs_url: "/",
   schema: {
     info: {
-      title: "My Awesome API",
-      version: "2.0.0",
-      description: "This is the documentation for my awesome API.",
+      title: "LINE RAG Chat Backend API",
+      version: "1.0.0",
+      description: "API for LINE RAG Chat Backend with AI-powered messaging and task management",
     },
   },
 });
 
-// Register Tasks Sub router
-openapi.route("/tasks", tasksRouter);
-
 // Register LINE Sub router
 openapi.route("/line", lineRouter);
 
-// Register other endpoints
-openapi.post("/dummy/:slug", DummyEndpoint);
+
+app.use("/admin/*", basicAuth({
+  verifyUser: (username, password, c) => {
+    // 環境変数が設定されているか確認 (堅牢性向上)
+    const expectedUser = c.env.ADMIN_USER;
+    const expectedPass = c.env.ADMIN_PASSWORD;
+
+    if (expectedUser === undefined || expectedPass === undefined) {
+        console.error("ADMIN_USER or ADMIN_PASSWORD is not set in environment variables.");
+        return false;
+    }
+
+    return username === expectedUser && password === expectedPass;
+  }
+}));
+
+adminRouter.get('/', (c) => {
+  return c.redirect('/admin/dashboard');
+});
+
+openapi.route("/admin", adminRouter); 
 
 // Export the Hono app
 export default app;

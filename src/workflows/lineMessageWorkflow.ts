@@ -1,13 +1,6 @@
 import { WorkflowEntrypoint, WorkflowStep, WorkflowEvent } from "cloudflare:workers";
 import { type DifyResponse } from "../endpoints/line/base";
 
-interface WorkflowEnv {
-  DB: D1Database;
-  DIFY_API_ENDPOINT: string;
-  DIFY_API_KEY: string;
-  LINE_CHANNEL_ACCESS_TOKEN: string;
-}
-
 interface InsertLineMessage {
   conversation_id: string;
   user_id: string;
@@ -24,18 +17,15 @@ export interface LineMessageWorkflowParams {
   messageType: string;
   messageContent: string | null;
   imageUrl: string | null;
-  replyToken?: string;
-  DIFY_API_ENDPOINT: string;
-  DIFY_API_KEY: string;
-  LINE_CHANNEL_ACCESS_TOKEN: string;
+  env: Env
 }
 
-export class LineMessageWorkflow extends WorkflowEntrypoint<WorkflowEnv, LineMessageWorkflowParams> {
+export class LineMessageWorkflow extends WorkflowEntrypoint<Env, LineMessageWorkflowParams> {
   async run(event: WorkflowEvent<LineMessageWorkflowParams>, step: WorkflowStep) {
     console.log("=== WORKFLOW RUN METHOD CALLED ===");
     console.log("Event payload:", JSON.stringify(event.payload, null, 2));
     
-    const { userId, messageType, messageContent, imageUrl, DIFY_API_ENDPOINT, DIFY_API_KEY, LINE_CHANNEL_ACCESS_TOKEN } = event.payload;
+    const { userId, messageType, messageContent, imageUrl, env } = event.payload;
 
     // Validate critical parameters early
     console.log("Input parameter validation:", {
@@ -74,7 +64,7 @@ export class LineMessageWorkflow extends WorkflowEntrypoint<WorkflowEnv, LineMes
       }
 
       console.log(`Processing message with Dify: "${messageContent}" for user: ${userId}`);
-      return await this.sendToDify(DIFY_API_ENDPOINT, DIFY_API_KEY, messageContent, conversationId, userId, imageUrl);
+      return await this.sendToDify(env.DIFY_API_ENDPOINT, env.DIFY_API_KEY, messageContent, conversationId, userId, imageUrl);
     });
     console.log(`Step 2 completed. Dify response length: ${difyResult.answer?.length || 0}`);
 
@@ -122,7 +112,7 @@ export class LineMessageWorkflow extends WorkflowEntrypoint<WorkflowEnv, LineMes
             .run(),
           
           // LINE送信
-          this.pushToLine(LINE_CHANNEL_ACCESS_TOKEN, userId, difyResult.answer)
+          this.pushToLine(env.LINE_CHANNEL_ACCESS_TOKEN, userId, difyResult.answer)
         ]);
 
         // 結果ログ
