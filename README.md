@@ -9,10 +9,10 @@ LINE Messaging API、Dify AI、Cloudflare Workersを統合したリアルタイ�
 ### 主要機能
 
 - **LINE Messaging API統合**: LINEユーザーとのリアルタイム対話
-- **Dify AI RAG処理**: 知識ベースに基づく高精度AI応答  
+- **Dify AI RAG処理**: 知識ベースに基づく高精度AI応答
 - **Cloudflare Workflows**: 非同期メッセージ処理とワークフロー管理
 - **D1データベース**: 会話履歴と状態管理
-- **管理機能**: メッセージ統計、CSV出力、管理ダッシュボード
+- **管理機能**: 管理ダッシュボード、Basic認証、CSV出力
 - **OpenAPI 3.1対応**: 自動API仕様生成とバリデーション
 
 ## 📋 技術スタック
