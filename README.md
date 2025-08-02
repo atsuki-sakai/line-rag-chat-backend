@@ -84,6 +84,8 @@ DIFY_API_KEY="your_dify_api_key"
 DIFY_API_ENDPOINT="https://api.dify.ai/v1"
 ```
 
+*** ダッシュボードでの追加とwrangler secret put で確実に追加する。 wrangler secret listで確認できる ***
+
 #### データベースマイグレーション
 ```bash
 # ローカル環境
