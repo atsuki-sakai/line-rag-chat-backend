@@ -9,9 +9,10 @@ LINE Messaging API、Dify AI、Cloudflare Workersを統合したリアルタイ�
 ### 主要機能
 
 - **LINE Messaging API統合**: LINEユーザーとのリアルタイム対話
-- **Dify AI RAG処理**: 知識ベースに基づく高精度AI応答
+- **Dify AI RAG処理**: 知識ベースに基づく高精度AI応答  
 - **Cloudflare Workflows**: 非同期メッセージ処理とワークフロー管理
 - **D1データベース**: 会話履歴と状態管理
+- **管理機能**: メッセージ統計、CSV出力、管理ダッシュボード
 - **OpenAPI 3.1対応**: 自動API仕様生成とバリデーション
 
 ## 📋 技術スタック
@@ -29,6 +30,7 @@ LINE Messaging API、Dify AI、Cloudflare Workersを統合したリアルタイ�
 line-rag-chat-backend/
 ├── src/
 │   ├── endpoints/              # APIエンドポイント
+│   │   ├── admin/             # 管理機能（メッセージ統計、CSV出力等）
 │   │   └── line/              # LINE Webhook・メッセージング
 │   ├── workflows/             # Cloudflare Workflows
 │   │   └── lineMessageWorkflow.ts
@@ -38,9 +40,12 @@ line-rag-chat-backend/
 │   ├── types.ts              # 共通型定義
 │   └── index.ts              # メインルーター
 ├── migrations/               # D1データベースマイグレーション
+│   ├── 0002_add_line_messages_table.sql
+│   └── 0003_add_performance_indexes.sql
 ├── tests/                   # 統合テスト
 ├── wrangler.jsonc          # Cloudflare設定
-└── CLAUDE.md              # AI開発者向け指示
+├── CLAUDE.md              # AI開発者向け指示
+└── SETUP.md              # セットアップガイド
 ```
 
 ## ⚡ クイックスタート
@@ -147,6 +152,14 @@ CREATE TABLE line_messages (
   updated_at TEXT NOT NULL
 );
 ```
+
+### 管理機能API
+
+- **GET /admin/messages**: メッセージ一覧取得（ページネーション対応）
+- **GET /admin/messages/stats**: メッセージ統計情報
+- **GET /admin/messages/csv**: CSV形式でメッセージ出力
+- **GET /admin/messages/{id}**: 個別メッセージ詳細
+- **DELETE /admin/messages/{id}**: メッセージ削除
 
 ## 🧪 テスト
 

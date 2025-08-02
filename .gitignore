@@ -3,7 +3,6 @@ node_modules/
 
 # Cloudflare Workers
 .wrangler/
-wrangler.jsonc
 
 # Environment variables
 .dev.vars

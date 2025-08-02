@@ -60,7 +60,8 @@ npm run cf-typegen          # Generate Cloudflare Worker types
 - Database is accessed via middleware that adds `c.get("db")` to context
 
 ### Project Structure Patterns
-- **Endpoints**: Organized by domain (`/tasks`, `/line`) with dedicated routers
+- **Endpoints**: Organized by domain (`/admin`, `/line`) with dedicated routers
+- **Admin Features**: Message management, statistics, CSV export in `src/endpoints/admin/`
 - **Workflows**: Separate directory for durable execution logic
 - **Types**: Shared interfaces in `src/types.ts` and inferred from schema
 - **Testing**: Integration tests mirror endpoint structure in `tests/integration/`
@@ -77,6 +78,12 @@ npm run cf-typegen          # Generate Cloudflare Worker types
 - Webhook validation uses HMAC-SHA256 signature verification
 - Workflow handles: conversation management, Dify AI processing, response formatting
 - Database stores conversation history with user mapping
+
+### Admin Features Implementation
+- **Message Management**: CRUD operations for LINE messages with pagination
+- **Statistics**: Real-time message counts and user metrics
+- **CSV Export**: Bulk data export functionality for analysis
+- **Performance**: Optimized queries using window functions and proper indexing
 
 ## Testing Architecture
 
