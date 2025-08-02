@@ -1,9 +1,8 @@
 import { OpenAPIRoute } from "chanfana";
 import { z } from "zod";
 import { lineWebhookBody, type LineWebhookEvent } from "./base";
-import { AppContext } from "../../types";
+import { AppContext, type LineMessageWorkflowParams } from "../../types";
 import crypto from "node:crypto";
-import { type LineMessageWorkflowParams } from "../../workflows/lineMessageWorkflow";
 
 export class LineWebhook extends OpenAPIRoute {
   schema = {
