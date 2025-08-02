@@ -124,7 +124,7 @@ export class MessageDelete extends OpenAPIRoute {
             const cutoffDate = new Date();
             cutoffDate.setDate(cutoffDate.getDate() - older_than_days);
             const cutoffDateString = cutoffDate.toISOString();
-            
+
             whereConditions.push(lt(lineMessages.created_at, cutoffDateString));
             description.push(`${older_than_days}日以前`);
           }
