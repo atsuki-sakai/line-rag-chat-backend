@@ -91,10 +91,47 @@ https://your-worker-name.your-subdomain.workers.dev/line/webhook
 
 ### Dify AI設定
 
-1. [Dify](https://dify.ai)にログインまたは独自インスタンスを準備
+#### オプション1: Dify Cloud（推奨）
+1. [Dify](https://dify.ai)にログイン
 2. アプリケーションを作成
 3. API Keyを取得
-4. エンドポイントURLを確認
+4. エンドポイントURL: `https://api.dify.ai/v1`
+
+#### オプション2: XserverのVPSにDifyを自己ホスト
+
+##### 🖥️ VPS要件
+- **最小スペック**: 6GB RAM以上、4コア以上、150GB以上のストレージ
+- **OS**: Ubuntu 20.04以上
+- **ポート**: 80, 443, 3000番ポートの開放
+- **SSL証明書**: 無料提供
+
+##### 💰 Xserver VPS料金（Dify対応プラン）
+- **6GB プラン**: 月額 / 通常1,700円 
+  - vCPU: 4コア、NVMe SSD: 150GB、Dify最小構成
+- **12GB プラン**: 月額 / 通常3,201円
+  - vCPU: 6コア、NVMe SSD: 400GB、推奨構成
+- **24GB プラン**: 月額 / 通常7,200円
+  - vCPU: 8コア、NVMe SSD: 800GB、本格運用
+
+##### 📋 デプロイ手順
+
+1. **XserverのVPS申し込み**
+- [Xserver VPS Dify専用ページ](https://vps.xserver.ne.jp/dify.php)からお申し込み
+- VPS初期設定時にDifyの自動インストールを選択
+- SSL証明書も自動で設定されます
+
+##### 🔧 メンテナンス
+- メンテナンス手順(https://vps.xserver.ne.jp/support/manual/man_server_app_use_dify.php)
+
+# バックアップ
+docker compose exec postgres pg_dump -U dify dify > backup_$(date +%Y%m%d).sql
+```
+
+##### ⚠️ 注意事項
+- 定期的なセキュリティアップデートを実施
+- データベースの定期バックアップを設定
+- ファイアウォール設定でセキュリティを強化
+- リソース監視を実装（CPU、メモリ、ディスク使用量）
 
 ## 🧪 開発・テスト
 
@@ -179,6 +216,49 @@ npx wrangler tail
 - リクエストサイズ制限（8MB）
 - メッセージ長制限（Dify: 10,000文字、LINE: 5,000文字）
 
+## 💰 総運用費用見積もり
+
+### Cloudflare
+- **Workers Free Plan**: 月100,000リクエスト無料
+- **Workers Paid Plan**: $5/月 + 超過分$0.50/100万リクエスト
+- **D1 Database**: 5GB無料、超過分$0.75/GB
+- **Workflows**: 10,000ステップ/月無料、超過分$0.50/100万ステップ
+
+#### 例: 月10万メッセージの場合
+- Workers: $5 + 追加料金なし
+- D1: 無料枠内
+- Workflows: 無料枠内
+- **合計**: 約$5/月（約750円）
+
+### Dify選択肢別費用
+
+#### Dify Cloud
+- **SelfHost**: 無料(別途サーバー費用)
+- **Sandbox Plan**: 無料（制限あり）
+- **Professional Plan**: $59/月（無制限メッセージ）
+- **Team Plan**: $159/月（チーム機能付き）
+
+#### Xserver VPS + セルフホスト（Dify含む）
+- **6GB VPS**: 月額 / 通常1,700円
+- **12GB VPS**: 月額 / 通常3,201円
+- **24GB VPS**: 月額 / 通常7,200円
+- **SSL証明書**: 更新・無料
+- **ドメイン**: 独自ドメイン利用時のみ年額8,000円程度
+
+#### 総費用比較（月額）
+
+| 構成 | Cloudflare | Dify | 合計 |
+|------|------------|------|------|
+| 最小構成（Dify Cloud） | 750円 | 無料〜$59 | 750円〜5,190円 |
+| 自己ホスト（6GB VPS） | 750円 | 1,190円 | 1,940円 |
+| 推奨構成（12GB VPS） | 750円 | 2,240円 | 2,990円 |
+| 本格運用（24GB VPS） | 750円 | 5,040円 | 5,790円 |
+
+### その他の費用
+- **LINE Messaging API**: 無料（基本機能）
+- **独自ドメイン**: 年額1,000〜3,000円
+- **監視・ログ**: Cloudflare Analytics無料
+
 ## 📚 参考資料
 
 - [Cloudflare Workers](https://developers.cloudflare.com/workers/)
@@ -188,7 +268,4 @@ npx wrangler tail
 - [Dify API](https://docs.dify.ai/guides/application-orchestrate/api-based-extension)
 - [Hono Framework](https://hono.dev/)
 - [Chanfana OpenAPI](https://chanfana.com/)
-
-## 🆘 サポート
-
-問題が発生した場合は、GitHubのIssuesでお知らせください。
+- [Xserver VPS](https://vps.xserver.ne.jp/support/manual/man_server_app_use_dify.php/)
