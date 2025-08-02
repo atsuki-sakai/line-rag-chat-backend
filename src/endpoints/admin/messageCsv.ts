@@ -1,7 +1,7 @@
 import { OpenAPIRoute, OpenAPIRouteSchema } from "chanfana";
 import { z } from "zod";
 import { lineMessages } from "../../db/schema";
-import { desc, sql, eq, and } from "drizzle-orm";
+import { desc, eq, and } from "drizzle-orm";
 import { AppContext } from "../../types";
 
 export class MessageCsv extends OpenAPIRoute {

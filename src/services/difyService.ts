@@ -29,15 +29,6 @@ export class DifyService implements AIService {
         conversation_id: conversationId,
       };
 
-      // メッセージプレビューをキャッシュ
-      const messagePreview = message.length > 50 ? message.substring(0, 50) + "..." : message;
-
-      console.log(`Sending to Dify API:`, {
-        conversation_id: conversationId,
-        user: userId,
-        query: messagePreview
-      });
-
       if (imageUrl) {
         requestBody.files = [{
           type: "image",
@@ -45,12 +36,9 @@ export class DifyService implements AIService {
           url: imageUrl,
         }];
       }
-
-      console.log(`About to call Dify API at: ${this.apiEndpoint}/chat-messages`);
-      
       // タイムアウト制御付きでfetch実行
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 600000); // 10分タイムアウト
+      const timeoutId = setTimeout(() => controller.abort(), 6000000); // 100分タイムアウト
       
       const response = await fetch(`${this.apiEndpoint}/chat-messages`, {
         method: "POST",
@@ -64,19 +52,9 @@ export class DifyService implements AIService {
       
       clearTimeout(timeoutId);
       
-      console.log(`Dify API response received: ${response.status} ${response.statusText} (after ${Date.now() - startTime}ms)`);
-
       if (!response.ok) {
         const errorText = await response.text();
-        console.error("Dify API error:", {
-          status: response.status,
-          statusText: response.statusText,
-          url: `${this.apiEndpoint}/chat-messages`,
-          error: errorText.substring(0, 500),
-          hasApiKey: !!this.apiKey,
-          apiKeyLength: this.apiKey?.length || 0,
-          requestBody: JSON.stringify(requestBody).substring(0, 300)
-        });
+        console.error("Dify API error:", errorText);
         
         // Handle specific error cases
         if (response.status === 404 && errorText.includes("Conversation Not Exists")) {
@@ -98,29 +76,13 @@ export class DifyService implements AIService {
       try {
         difyResult = await response.json() as DifyResponse;
       } catch (parseError) {
-        console.error("Failed to parse Dify API response as JSON:", {
-          parseError: parseError instanceof Error ? parseError.message : String(parseError),
-          responseStatus: response.status,
-          responseHeaders: Object.fromEntries(response.headers.entries())
-        });
+        console.error("Failed to parse Dify API response as JSON:", parseError);
         return { answer: "申し訳ございません。応答の解析に失敗しました。" };
       }
       
-      const duration = Date.now() - startTime;
-      console.log(`Dify API response:`, {
-        answer: difyResult.answer?.substring(0, 100) || "No answer",
-        conversation_id: difyResult.conversation_id || "No conversation_id",
-        duration: `${duration}ms`,
-        hasAnswer: !!difyResult.answer,
-        answerLength: difyResult.answer?.length || 0
-      });
-      
       // Validate that we have a meaningful answer
       if (!difyResult.answer || difyResult.answer.trim() === "") {
-        console.warn("Dify API returned empty or undefined answer:", {
-          answer: difyResult.answer,
-          fullResponse: difyResult
-        });
+        console.warn("Dify API returned empty or undefined answer:", difyResult);
         return { answer: "申し訳ございません。回答を生成できませんでした。" };
       }
       

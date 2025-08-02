@@ -1,6 +1,4 @@
 import { OpenAPIRoute, OpenAPIRouteSchema } from "chanfana";
-import { z } from "zod";
-import { Context } from "hono";
 
 export abstract class MessageAdminRoute extends OpenAPIRoute {
   getSchema(): OpenAPIRouteSchema {

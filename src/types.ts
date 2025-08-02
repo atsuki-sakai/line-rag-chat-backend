@@ -3,6 +3,7 @@ import type { DrizzleDB } from "./db";
 import { z } from "zod";
 import { lineMessages, type LineMessage, type InsertLineMessage } from "./db/schema";
 
+// Common Types
 export type AppContext = Context<{ 
   Bindings: Env & {
     LINE_MESSAGE_WORKFLOW: Workflow;

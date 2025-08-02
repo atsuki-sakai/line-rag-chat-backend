@@ -15,52 +15,32 @@ interface InsertLineMessage {
 
 export class LineMessageWorkflow extends WorkflowEntrypoint<Env, LineMessageWorkflowParams> {
   async run(event: WorkflowEvent<LineMessageWorkflowParams>, step: WorkflowStep) {
-    console.log("=== WORKFLOW RUN METHOD CALLED ===");
-    console.log("Event payload:", JSON.stringify(event.payload, null, 2));
     
     const { userId, messageType, messageContent, imageUrl, env } = event.payload;
 
-    // Validate critical parameters early
-    console.log("Input parameter validation:", {
-      userId: { value: userId, type: typeof userId, isUndefined: userId === undefined },
-      messageType: { value: messageType, type: typeof messageType, isUndefined: messageType === undefined },
-      messageContent: { value: messageContent, type: typeof messageContent, isUndefined: messageContent === undefined },
-      imageUrl: { value: imageUrl, type: typeof imageUrl, isUndefined: imageUrl === undefined }
-    });
+
 
     if (!userId || userId === undefined) {
       console.error("Critical: userId is undefined or null");
       throw new Error("userId is required for workflow execution");
     }
 
-    console.log(`Starting workflow for user: ${userId}, message: ${messageContent?.substring(0, 50)}`);
-    
-    // Get DB from environment
     const db = this.env.DB;
-    console.log("DB available:", !!db);
 
     // Step 1: Get or create conversation ID with retry
-    console.log("Starting Step 1: Get conversation ID");
     const conversationId = await step.do("get-conversation-id", async () => {
-      console.log("Executing get-conversation-id step");
       return await this.getOrCreateConversationId(db, userId);
     });
-    console.log(`Step 1 completed. Conversation ID: ${conversationId}`);
 
     // Step 2: Process message with Dify using service
-    console.log("Starting Step 2: Process Dify");
     const difyResult = await step.do("process-dify", async () => {
-      console.log("Executing process-dify step");
       if (!messageContent) {
-        console.log("No message content, returning empty answer");
         return { answer: "", conversation_id: conversationId };
       }
 
-      console.log(`Processing message with Dify: "${messageContent}" for user: ${userId}`);
       const difyService = new DifyService(env.DIFY_API_ENDPOINT, env.DIFY_API_KEY);
       return await difyService.processMessage(messageContent, conversationId, userId, imageUrl);
     });
-    console.log(`Step 2 completed. Dify response length: ${difyResult.answer?.length || 0}`);
 
     // Step 3 & 4: データベース保存とLINE送信の並列実行最適化
     if (difyResult.answer && userId) {
@@ -86,8 +66,6 @@ export class LineMessageWorkflow extends WorkflowEntrypoint<Env, LineMessageWork
           updated_at: finalUpdatedAt,
         };
 
-        console.log("Starting parallel execution: Database save + LINE push");
-        
         // 並列実行：データベース保存とLINE送信
         const [dbResult, lineResult] = await Promise.allSettled([
           // データベース保存
@@ -110,15 +88,11 @@ export class LineMessageWorkflow extends WorkflowEntrypoint<Env, LineMessageWork
         ]);
 
         // 結果ログ
-        if (dbResult.status === 'fulfilled') {
-          console.log(`✅ Database save completed for user: ${userId}`);
-        } else {
+        if (dbResult.status !== 'fulfilled') {
           console.error(`❌ Database save failed for user: ${userId}:`, dbResult.reason);
         }
 
-        if (lineResult.status === 'fulfilled') {
-          console.log(`✅ LINE push completed for user: ${userId}`);
-        } else {
+        if (lineResult.status !== 'fulfilled') {
           console.error(`❌ LINE push failed for user: ${userId}:`, lineResult.reason);
         }
 
@@ -170,12 +144,10 @@ export class LineMessageWorkflow extends WorkflowEntrypoint<Env, LineMessageWork
           )
           .run();
         
-        console.log(`Message saved to database (no LINE response) for user: ${userId}`);
         return messageRecord;
       });
     }
 
-    console.log(`Workflow completed for user: ${userId}`);
     return { success: true, userId, responseLength: difyResult.answer?.length || 0 };
   }
 
@@ -200,20 +172,13 @@ export class LineMessageWorkflow extends WorkflowEntrypoint<Env, LineMessageWork
 
     if (recentMessage.results && recentMessage.results.length > 0) {
       const existingId = (recentMessage.results[0] as any).conversation_id as string;
-      console.log(`Found existing conversation_id: ${existingId} for user: ${userId}`);
       
       // Check if existing conversation_id is a valid UUID format
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
       if (existingId && uuidRegex.test(existingId)) {
-        console.log(`Using existing valid conversation_id: ${existingId}`);
         return existingId;
       }
-      console.log(`Invalid conversation_id format: ${existingId}, creating new conversation`);
-    } else {
-      console.log(`No existing messages found for user: ${userId}, creating new conversation`);
     }
-
-    // Return empty string for new conversations (Dify API requirement)
     return '';
   }
 
@@ -224,13 +189,6 @@ export class LineMessageWorkflow extends WorkflowEntrypoint<Env, LineMessageWork
       console.warn("LINE message too long, truncating:", message.length);
       message = message.substring(0, 4900) + "...\n（メッセージが長すぎたため省略されました）";
     }
-    
-    console.log(`LINE Push attempt:`, {
-      userId: userId,
-      messageLength: message.length,
-      hasAccessToken: !!accessToken,
-      tokenLength: accessToken?.length || 0
-    });
     
     try {
       // タイムアウト制御付きでLINE API呼び出し
@@ -257,13 +215,8 @@ export class LineMessageWorkflow extends WorkflowEntrypoint<Env, LineMessageWork
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error("LINE Push API error:", {
-          status: response.status,
-          error: errorText.substring(0, 200)
-        });
+        console.error("LINE Push API error:", errorText);
         throw new Error(`LINE API error: ${response.status}`);
-      } else {
-        console.log("LINE Push message sent successfully");
       }
     } catch (error) {
       // タイムアウトエラーの場合

@@ -170,8 +170,6 @@ export class MessageDelete extends OpenAPIRoute {
           }, 400);
       }
 
-      console.log(`Delete operation completed: ${message} (${deletedCount} records)`);
-
       return c.json({
         success: true,
         deleted_count: deletedCount,
@@ -234,8 +232,6 @@ export class MessageDeletePreview extends OpenAPIRoute {
       const body = await c.req.json();
       const { conversation_id, user_id, older_than_days } = body;
       
-      console.log('Delete preview request:', { conversation_id, user_id, older_than_days });
-
       let whereConditions = [];
 
       if (conversation_id) {

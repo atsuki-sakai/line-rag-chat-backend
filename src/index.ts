@@ -9,7 +9,6 @@ import { LineMessageWorkflow } from "./workflows/lineMessageWorkflow";
 import { basicAuth } from "hono/basic-auth";
 
 
-
 // Start a Hono app
 const app = new Hono<{ 
   Bindings: Env & {
@@ -85,7 +84,6 @@ app.use("/admin/*", basicAuth({
         console.error("ADMIN_USER or ADMIN_PASSWORD is not set in environment variables.");
         return false;
     }
-
     return username === expectedUser && password === expectedPass;
   }
 }));

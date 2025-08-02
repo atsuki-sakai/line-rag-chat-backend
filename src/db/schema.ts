@@ -1,14 +1,6 @@
 import { sqliteTable, integer, text } from "drizzle-orm/sqlite-core";
 
-export const tasks = sqliteTable("tasks", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  name: text("name").notNull(),
-  slug: text("slug").notNull(),
-  description: text("description").notNull(),
-  completed: integer("completed", { mode: "boolean" }).notNull(),
-  due_date: text("due_date").notNull(),
-});
-
+// LINE Message Table
 export const lineMessages = sqliteTable("line_messages", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   conversation_id: text("conversation_id").notNull(),
@@ -21,7 +13,5 @@ export const lineMessages = sqliteTable("line_messages", {
   updated_at: text("updated_at").notNull(),
 });
 
-export type Task = typeof tasks.$inferSelect;
-export type InsertTask = typeof tasks.$inferInsert;
 export type LineMessage = typeof lineMessages.$inferSelect;
 export type InsertLineMessage = typeof lineMessages.$inferInsert;

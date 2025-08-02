@@ -698,13 +698,10 @@ export class MessageView extends OpenAPIRoute {
         
         // Delete Modal Functions
         function showDeleteModal() {
-            console.log('showDeleteModal called'); // デバッグログ
+           
             const modal = document.getElementById('deleteModal');
             if (modal) {
                 modal.style.display = 'block';
-                console.log('Modal should be visible now');
-            } else {
-                console.error('Modal element not found');
             }
         }
         
